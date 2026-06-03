@@ -269,9 +269,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
   return (
     <LanguageContext.Provider value={{ lang, setLang, t }}>
-      {/* Provide an easy SSR fallback by just displaying children once mounting/hydration completes safely
-          Wrap with key={lang} to force re-render children cleanly on change, avoiding stale React click event states */}
-      <div key={lang}>{children}</div>
+      {children}
     </LanguageContext.Provider>
   );
 }
