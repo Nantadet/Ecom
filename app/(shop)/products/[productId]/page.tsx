@@ -29,9 +29,15 @@ export default async function ProductPage({ params }: ProductPageProps) {
     description: product.description,
     price: product.price,
     stock: product.stock,
+    category: product.category,
     options: product.options,
+    imageUrl: product.imageUrl,
     shippingFirstItem: product.shippingFirstItem,
     shippingAdditionalItem: product.shippingAdditionalItem,
+    remoteShippingFirstItem: product.remoteShippingFirstItem,
+    remoteShippingAdditionalItem: product.remoteShippingAdditionalItem,
+    islandShippingFirstItem: product.islandShippingFirstItem,
+    islandShippingAdditionalItem: product.islandShippingAdditionalItem,
     imageUrls: product.imageUrls,
   };
 

@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/lib/client/language-context";
 import type { Product } from "./types";
 import { money } from "./api-client";
+import { FLOW_LABELS, getProductFlowKind } from "@/lib/shop/product-flow";
 
 export function ProductDetailModal({ product, onEdit, onDelete, onClose }: {
   product: Product;
@@ -20,6 +21,8 @@ export function ProductDetailModal({ product, onEdit, onDelete, onClose }: {
   const discountedPrice = product.discount
     ? Math.round(product.price * (1 - product.discount / 100))
     : null;
+  const flowKind = getProductFlowKind(product);
+  const flowLabel = flowKind === "other" ? (product.category || "Other") : FLOW_LABELS[flowKind].th;
 
   function handleDelete() {
     onDelete(product.id);
@@ -62,6 +65,16 @@ export function ProductDetailModal({ product, onEdit, onDelete, onClose }: {
         <div className="overflow-y-auto flex-1 p-5 flex flex-col gap-4">
           <div>
             <h2 className="font-black text-gray-900 text-lg leading-tight">{product.name.th}</h2>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <Badge className="rounded-lg bg-[#85241F]/8 px-2 py-0.5 text-[10px] font-black text-[#85241F]">
+                {flowLabel}
+              </Badge>
+              {product.options?.length ? (
+                <Badge className="rounded-lg bg-blue-50 px-2 py-0.5 text-[10px] font-black text-blue-700">
+                  {product.options.length} options
+                </Badge>
+              ) : null}
+            </div>
           </div>
 
           {/* Price + stock */}

@@ -26,6 +26,7 @@ type ApiProduct = {
   category?: string;
   options?: Array<string | ProductOption>;
   imageUrl?: string;
+  imageUrls?: string[];
   active: boolean;
 };
 
@@ -40,6 +41,7 @@ type DisplayProduct = {
   category: string;
   options: ProductOption[];
   imageUrl?: string;
+  imageUrls?: string[];
 };
 
 function normalizeCategory(category?: string) {
@@ -86,6 +88,7 @@ function apiToDisplay(product: ApiProduct): DisplayProduct {
     category: normalizeCategory(product.category),
     options: normalizeOptions(product.options),
     imageUrl: product.imageUrl,
+    imageUrls: product.imageUrls,
   };
 }
 

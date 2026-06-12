@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import type { Product } from "./types";
 import { money } from "./api-client";
 import { ProductDetailModal } from "./product-detail-modal";
+import { FLOW_LABELS, getProductFlowKind } from "@/lib/shop/product-flow";
 
 export function ProductCard({ product, onUpdate, onDelete, onEdit, t }: {
   product: Product;
@@ -21,6 +22,8 @@ export function ProductCard({ product, onUpdate, onDelete, onEdit, t }: {
   const discountedPrice = product.discount
     ? Math.round(product.price * (1 - product.discount / 100))
     : null;
+  const flowKind = getProductFlowKind(product);
+  const flowLabel = flowKind === "other" ? (product.category || "Other") : FLOW_LABELS[flowKind].th;
 
   return (
     <>
@@ -38,6 +41,9 @@ export function ProductCard({ product, onUpdate, onDelete, onEdit, t }: {
               -{product.discount}%
             </Badge>
           ) : null}
+          <Badge className="absolute bottom-2.5 left-2.5 max-w-[calc(100%-1.25rem)] truncate bg-white/92 text-[#0b2a55] text-[9px] font-black px-2 py-0.5 rounded-lg shadow-sm">
+            {flowLabel}
+          </Badge>
           {/* Action buttons */}
           <div
             className="absolute top-2.5 right-2.5 flex gap-1.5 opacity-90 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-200"

@@ -38,7 +38,7 @@ export function TestEmailPanel({ defaultTo = "", onNotify }: Props) {
       body: JSON.stringify({ to: to.trim(), template, note: note.trim() }),
     });
     setSending(false);
-    onNotify?.(res.error ?? "ส่งอีเมลทดสอบแล้ว ✓");
+    onNotify?.(res.error ?? "ส่งอีเมลทดสอบแล้ว");
   }
 
   return (

@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import type { Product } from "@/components/admin/types";
 import ProductCard from "@/components/admin/product-card";
+import { FLOW_LABELS, getProductFlowKind, type ShopFlowKind } from "@/lib/shop/product-flow";
 
 type ProductsPanelProps = {
   products: Product[];
@@ -25,23 +26,51 @@ export function ProductsPanel({
   t,
 }: ProductsPanelProps) {
   const [productSearch, setProductSearch] = React.useState("");
+  const [flowFilter, setFlowFilter] = React.useState<ShopFlowKind | "all">("all");
 
   const filteredProducts = React.useMemo(() => {
     const query = productSearch.trim().toLowerCase();
     return products.filter((product) => {
+      const flowKind = getProductFlowKind(product);
+      if (flowFilter !== "all" && flowKind !== flowFilter) return false;
       if (!query) return true;
       const nameTh = product.name.th.toLowerCase();
       const nameEn = product.name.en?.toLowerCase() ?? "";
       const descTh = product.description?.th.toLowerCase() ?? "";
       const descEn = product.description?.en?.toLowerCase() ?? "";
+      const category = product.category?.toLowerCase() ?? "";
       return (
         nameTh.includes(query) ||
         nameEn.includes(query) ||
         descTh.includes(query) ||
-        descEn.includes(query)
+        descEn.includes(query) ||
+        category.includes(query)
       );
     });
-  }, [products, productSearch]);
+  }, [flowFilter, products, productSearch]);
+
+  const flowTabs = React.useMemo(() => {
+    const labels = lang === "th" ? {
+      all: "ทั้งหมด",
+      bottle: FLOW_LABELS.bottle.th,
+      secret: FLOW_LABELS.secret.th,
+      bracelet: FLOW_LABELS.bracelet.th,
+      charm: FLOW_LABELS.charm.th,
+    } : {
+      all: "All",
+      bottle: FLOW_LABELS.bottle.en,
+      secret: FLOW_LABELS.secret.en,
+      bracelet: FLOW_LABELS.bracelet.en,
+      charm: FLOW_LABELS.charm.en,
+    };
+    return [
+      { value: "all" as const, label: labels.all },
+      { value: "bottle" as const, label: labels.bottle },
+      { value: "secret" as const, label: labels.secret },
+      { value: "bracelet" as const, label: labels.bracelet },
+      { value: "charm" as const, label: labels.charm },
+    ];
+  }, [lang]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -70,6 +99,23 @@ export function ProductsPanel({
       </div>
 
       {/* Product grid — full width */}
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {flowTabs.map((tab) => (
+          <button
+            key={tab.value}
+            type="button"
+            onClick={() => setFlowFilter(tab.value)}
+            className={`h-9 shrink-0 rounded-xl border px-3 text-xs font-black transition-colors ${
+              flowFilter === tab.value
+                ? "border-[#85241F] bg-[#85241F]/8 text-[#85241F]"
+                : "border-gray-200 bg-white text-gray-500 hover:border-gray-300"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
       {filteredProducts.length > 0 ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3.5">
           {filteredProducts.map((p) => (

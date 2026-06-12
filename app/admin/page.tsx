@@ -300,6 +300,7 @@ export default function AdminPage() {
       shippingFirstItem: Number(formData.get("shippingFirstItem")) || 0,
       shippingAdditionalItem: Number(formData.get("shippingAdditionalItem")) || 0,
       discount: Number(formData.get("discount")) || undefined,
+      category: String(formData.get("category") ?? "").trim() || undefined,
       imageUrl: String(formData.get("imageUrl") ?? "").trim() || undefined,
       imageUrls: (() => {
         try {

@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import * as React from "react";
-import { Image as ImageIcon, Truck } from "lucide-react";
+import { ArrowRight, Droplets, Gem, Sparkles } from "lucide-react";
 import { useLanguage } from "@/lib/client/language-context";
+import { findFlowProduct, flowProductImage } from "@/lib/shop/product-flow";
 
 type ProductOption = {
   label: string;
@@ -28,178 +28,136 @@ type DisplayProduct = {
   category: string;
   options: ProductOption[];
   imageUrl?: string;
+  imageUrls?: string[];
 };
 
 type HomeClientProps = {
   products: DisplayProduct[];
 };
 
-const currencyFormatter = new Intl.NumberFormat("th-TH", {
-  style: "currency",
-  currency: "THB",
-  maximumFractionDigits: 0,
-});
+function BottleBackdrop() {
+  return (
+    <>
+      <div className="absolute inset-0 bg-[linear-gradient(135deg,#dff3ff_0%,#f5fbff_48%,#cfe8ff_100%)]" />
+      <div className="absolute -left-8 bottom-0 h-24 w-40 rounded-full bg-white/70 blur-2xl" />
+      <div className="absolute -right-10 -top-8 h-28 w-28 rounded-full bg-[#7fc7a4]/25 blur-2xl" />
+      <div className="absolute right-4 top-5 h-14 w-24 rotate-12 rounded-full border-t border-[#3a7e64]/25" />
+      <div className="absolute bottom-0 left-0 h-20 w-full bg-[linear-gradient(0deg,rgba(255,255,255,.78),rgba(255,255,255,0))]" />
+    </>
+  );
+}
 
-function money(value: number) {
-  return currencyFormatter.format(value);
+function JewelryBackdrop() {
+  return (
+    <>
+      <div className="absolute inset-0 bg-[linear-gradient(135deg,#f9efe8_0%,#fff9f4_42%,#e8f5ff_100%)]" />
+      <div className="absolute -left-10 top-6 h-28 w-28 rounded-full bg-[#73513d]/10 blur-2xl" />
+      <div className="absolute right-0 bottom-0 h-24 w-32 rounded-full bg-[#9bd2ff]/25 blur-2xl" />
+      <div className="absolute inset-x-0 bottom-0 h-24 bg-[linear-gradient(0deg,rgba(255,255,255,.84),rgba(255,255,255,0))]" />
+    </>
+  );
+}
+
+function EntryCard({
+  href,
+  title,
+  subtitle,
+  cta,
+  image,
+  tone,
+}: {
+  href: string;
+  title: string;
+  subtitle: string;
+  cta: string;
+  image: string;
+  tone: "bottle" | "jewelry";
+}) {
+  const isBottle = tone === "bottle";
+
+  return (
+    <Link
+      href={href}
+      className={`group relative block min-h-[212px] overflow-hidden rounded-[24px] border border-white shadow-[0_16px_44px_rgba(15,23,42,0.08)] transition-transform active:scale-[0.985] sm:min-h-[260px] ${
+        isBottle ? "text-[#0b2a55]" : "text-[#5a3e2b]"
+      }`}
+    >
+      {isBottle ? <BottleBackdrop /> : <JewelryBackdrop />}
+
+      <div className="relative z-10 flex h-full min-h-[212px] items-center px-8 py-7 sm:min-h-[260px] sm:px-10">
+        <div className="max-w-[48%]">
+          <div
+            className={`mb-3 flex h-9 w-9 items-center justify-center rounded-2xl ${
+              isBottle ? "bg-white/80 text-[#12396b]" : "bg-white/80 text-[#73513d]"
+            } shadow-sm`}
+          >
+            {isBottle ? <Droplets className="h-5 w-5" /> : <Gem className="h-5 w-5" />}
+          </div>
+          <h1 className="text-[clamp(2.25rem,9vw,4.25rem)] font-black leading-[0.9] tracking-normal">
+            {title}
+          </h1>
+          <p className="mt-3 max-w-44 text-sm font-bold leading-snug sm:text-base">
+            {subtitle}
+          </p>
+          <span
+            className={`mt-4 inline-flex h-9 items-center gap-2 rounded-xl px-4 text-xs font-black text-white shadow-lg transition-transform group-hover:translate-x-1 ${
+              isBottle ? "bg-[#102f5c]" : "bg-[#73513d]"
+            }`}
+          >
+            {cta}
+            <ArrowRight className="h-4 w-4" />
+          </span>
+        </div>
+      </div>
+
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={image}
+        alt=""
+        className={`absolute z-10 object-contain drop-shadow-[0_18px_24px_rgba(15,23,42,0.14)] transition-transform duration-500 group-hover:scale-[1.03] ${
+          isBottle
+            ? "right-[-7%] bottom-[-5%] h-[104%] w-[58%] sm:right-[4%] sm:h-[96%]"
+            : "left-0 top-0 h-full w-full object-cover opacity-95"
+        }`}
+      />
+      {!isBottle && (
+        <div className="absolute inset-0 z-10 bg-[linear-gradient(90deg,rgba(255,255,255,.90),rgba(255,255,255,.55)_48%,rgba(255,255,255,.08))]" />
+      )}
+      {!isBottle && (
+        <Sparkles className="absolute right-7 top-7 z-20 h-6 w-6 text-[#73513d]/45" />
+      )}
+    </Link>
+  );
 }
 
 export function HomeClient({ products }: HomeClientProps) {
-  const { lang, t } = useLanguage();
-  const router = useRouter();
+  const { lang } = useLanguage();
+  const bottle = React.useMemo(() => findFlowProduct(products, "bottle"), [products]);
+  const bracelet = React.useMemo(() => findFlowProduct(products, "bracelet"), [products]);
 
-  const goToProduct = React.useCallback((productId: string) => {
-    router.push(`/products/${productId}`);
-  }, [router]);
-
-  const trackingEntry = (
-    <Link
-      href="/profile"
-      className="shop-tracking mb-4 flex items-center justify-between rounded-2xl border border-gray-100 bg-white px-4 py-3 shadow-sm transition-all duration-200 hover:border-[#85241F]/20 hover:bg-[#85241F]/5 active:scale-[0.98] md:hidden"
-    >
-      <div className="flex items-center gap-3">
-        <div className="shop-tracking-icon flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#85241F]/8 text-[#85241F]">
-          <Truck className="h-5 w-5" />
-        </div>
-        <div>
-          <p className="text-sm font-black text-gray-900">
-            {lang === "th" ? "ติดตามพัสดุ" : "Track package"}
-          </p>
-          <p className="mt-0.5 text-xs font-semibold text-gray-400">
-            {lang === "th" ? "ใส่เบอร์โทรเพื่อดูสถานะและเลขพัสดุ" : "Enter your phone to see status and tracking"}
-          </p>
-        </div>
-      </div>
-      <span className="text-lg font-bold text-gray-300">›</span>
-    </Link>
-  );
-
-  const productGrid = (
-    <section>
-      {products.length === 0 ? (
-        <div className="text-center py-16">
-          <p className="text-sm text-gray-400">{t("shop.no_category")}</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
-          {products.map((p) => {
-            const isOutOfStock = p.options.length > 0
-              ? p.options.every((option) => (option.stock ?? p.stock) < 1)
-              : p.stock < 1;
-            const needsOption = p.options.length > 0;
-            const cardContent = (
-              <>
-                {/* Image — full width, no frame */}
-                <div className="relative aspect-square bg-[#f5f5f5] overflow-hidden">
-                  {p.imageUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={p.imageUrl}
-                      alt={p.name[lang] || p.name.th}
-                      className={`h-full w-full object-cover ${isOutOfStock ? "" : "transition-transform duration-300 group-hover:scale-105"}`}
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <ImageIcon className="w-12 h-12 text-gray-200" />
-                    </div>
-                  )}
-                  {isOutOfStock && (
-                    <span className="absolute bottom-2 left-2 rounded-xl bg-gray-900/75 px-2 py-0.5 text-[10px] font-bold text-white">
-                      {t("shop.out_of_stock")}
-                    </span>
-                  )}
-                </div>
-                {/* Info */}
-                <div className="px-4 py-3.5 flex flex-col gap-0.5">
-                  <p className="truncate text-sm font-black text-gray-900">
-                    {p.name[lang] || p.name.th}
-                  </p>
-                  <p className="mt-2 text-base font-black text-[#85241F]">{money(p.price)}</p>
-                </div>
-              </>
-            );
-
-            if (!isOutOfStock && needsOption) {
-              return (
-                <div
-                  key={p.id}
-                  className="group relative rounded-3xl bg-white shadow-[0_4px_20px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.13)] transition-all duration-300 overflow-hidden active:scale-[0.98]"
-                >
-                  <Link href={`/products/${p.id}`} className="block">
-                    {cardContent}
-                  </Link>
-                  <div className="px-3 pb-3">
-                    <button
-                      type="button"
-                      onClick={() => goToProduct(p.id)}
-                      className="flex h-10 w-full items-center justify-center rounded-2xl bg-[#85241F] px-3 text-xs font-black text-white transition-transform active:scale-[0.98]"
-                    >
-                      <span className="truncate">{lang === "th" ? "เลือกซื้อ" : "Choose"}</span>
-                    </button>
-                  </div>
-                </div>
-              );
-            }
-
-            const actions = isOutOfStock ? (
-              <div className="px-3 pb-3">
-                <div className="flex h-10 items-center justify-center rounded-2xl bg-gray-100 text-xs font-black text-gray-400">
-                  {t("shop.out_of_stock")}
-                </div>
-              </div>
-            ) : null;
-
-            if (isOutOfStock) {
-              return (
-                <div
-                  key={p.id}
-                  className="group rounded-3xl bg-white shadow-[0_4px_20px_rgba(0,0,0,0.08)] overflow-hidden opacity-60 cursor-not-allowed"
-                >
-                  {cardContent}
-                  {actions}
-                </div>
-              );
-            }
-
-            return (
-              <div
-                key={p.id}
-                className="group relative rounded-3xl bg-white shadow-[0_4px_20px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.13)] transition-all duration-300 overflow-hidden active:scale-[0.98]"
-              >
-                <Link
-                  href={`/products/${p.id}`}
-                  onClick={(e) => {
-                    const card = e.currentTarget;
-                    const rect = card.getBoundingClientRect();
-                    const x = e.clientX - rect.left;
-                    const y = e.clientY - rect.top;
-                    const size = Math.max(rect.width, rect.height);
-                    const ripple = document.createElement("span");
-                    ripple.className = "ripple";
-                    ripple.style.cssText = `width:${size}px;height:${size}px;left:${x - size / 2}px;top:${y - size / 2}px`;
-                    card.appendChild(ripple);
-                    setTimeout(() => ripple.remove(), 280);
-                  }}
-                  className="block"
-                >
-                  {cardContent}
-                </Link>
-                {actions}
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </section>
-  );
+  void bracelet;
 
   return (
-    <div className="min-h-screen bg-white">
-      <div className="px-4 md:px-6 py-4 pb-24">
-        {/* Mobile: tracking card */}
-        {trackingEntry}
-        {productGrid}
+    <main className="min-h-screen bg-white">
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-3 py-4 pb-10 sm:gap-5 sm:px-5 lg:py-8">
+        <EntryCard
+          href="/bottle"
+          title={lang === "th" ? "ขวดน้ำ" : "Bottle"}
+          subtitle={lang === "th" ? "พกพาสะดวก ดีไซน์สวย ใช้งานง่าย" : "Carry comfort with a fresh daily design"}
+          cta={lang === "th" ? "ช้อปเลย" : "Shop now"}
+          image={flowProductImage(bottle, "bottle")}
+          tone="bottle"
+        />
+
+        <EntryCard
+          href="/bracelets"
+          title={lang === "th" ? "สร้อยข้อมือ" : "Bracelet"}
+          subtitle={lang === "th" ? "พร้อม Charm เติมความน่ารักให้ทุกวันพิเศษของคุณ" : "Add charm to every little moment"}
+          cta={lang === "th" ? "ช้อปเลย" : "Shop now"}
+          image="/images/charm-grid.png"
+          tone="jewelry"
+        />
       </div>
-    </div>
+    </main>
   );
 }

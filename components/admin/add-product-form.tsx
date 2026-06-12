@@ -1,13 +1,52 @@
 "use client";
 
 import * as React from "react";
-import { PackagePlus, Pencil, Upload, XCircle } from "lucide-react";
+import { Gem, PackagePlus, Pencil, Plus, Trash2, Upload, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useLanguage } from "@/lib/client/language-context";
-import type { Product } from "./types";
+import type { Product, ProductOption } from "./types";
+
+type OptionDraft = {
+  id: string;
+  label: string;
+  imageUrl: string;
+  stock: string;
+};
+
+const FLOW_CATEGORY_OPTIONS = [
+  { value: "bottle", label: "ขวดน้ำ", hint: "หน้าแรก -> หน้าขวดน้ำ" },
+  { value: "secret", label: "Secret Set", hint: "หน้า 3 บล็อก -> Secret" },
+  { value: "bracelet", label: "สร้อยข้อมือ", hint: "หน้า 3 บล็อก -> สร้อย" },
+  { value: "charm", label: "Charm", hint: "หน้า 3 บล็อก -> เลือกซื้อ Charm" },
+  { value: "other", label: "อื่น ๆ", hint: "สินค้าแสดงแบบทั่วไป" },
+];
+
+const FLOW_CATEGORY_VALUES = FLOW_CATEGORY_OPTIONS.map((item) => item.value);
+
+function initialCategory(value?: string) {
+  const normalized = value?.trim();
+  if (!normalized) return "bottle";
+  return FLOW_CATEGORY_VALUES.includes(normalized) ? normalized : "other";
+}
+
+function optionDraft(option: ProductOption, index: number): OptionDraft {
+  return {
+    id: `${index}-${option.label}`,
+    label: option.label,
+    imageUrl: option.imageUrl ?? "",
+    stock: option.stock == null ? "" : String(option.stock),
+  };
+}
 
 export function AddProductForm({ onSubmit, onUpdate, notify, t, open: controlledOpen, onClose, product }: {
   onSubmit: (fd: FormData) => void;
@@ -29,6 +68,10 @@ export function AddProductForm({ onSubmit, onUpdate, notify, t, open: controlled
     if (product?.imageUrl) return [product.imageUrl];
     return [];
   });
+  const [category, setCategory] = React.useState(initialCategory(product?.category));
+  const [optionRows, setOptionRows] = React.useState<OptionDraft[]>(() =>
+    (product?.options ?? []).map((option, index) => optionDraft(option, index)),
+  );
   const [imageError, setImageError] = React.useState(false);
   const fileRef = React.useRef<HTMLInputElement>(null);
   const formRef = React.useRef<HTMLFormElement>(null);
@@ -54,6 +97,29 @@ export function AddProductForm({ onSubmit, onUpdate, notify, t, open: controlled
     setImagePreviews((prev) => prev.filter((_, i) => i !== idx));
   }
 
+  function addOptionRow() {
+    setOptionRows((rows) => [
+      ...rows,
+      { id: `new-${Date.now()}`, label: "", imageUrl: "", stock: "" },
+    ]);
+  }
+
+  function updateOptionRow(id: string, patch: Partial<OptionDraft>) {
+    setOptionRows((rows) => rows.map((row) => row.id === id ? { ...row, ...patch } : row));
+  }
+
+  function removeOptionRow(id: string) {
+    setOptionRows((rows) => rows.filter((row) => row.id !== id));
+  }
+
+  const normalizedOptions = optionRows
+    .map((row) => ({
+      label: row.label.trim(),
+      imageUrl: row.imageUrl.trim(),
+      stock: row.stock === "" ? undefined : Math.max(0, Number(row.stock) || 0),
+    }))
+    .filter((row) => row.label);
+
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (imagePreviews.length === 0) {
@@ -64,7 +130,8 @@ export function AddProductForm({ onSubmit, onUpdate, notify, t, open: controlled
     const fd = new FormData(e.currentTarget);
     if (imagePreviews[0]) fd.set("imageUrl", imagePreviews[0]);
     fd.set("imageUrls", JSON.stringify(imagePreviews));
-    fd.set("options", JSON.stringify([]));
+    fd.set("category", category);
+    fd.set("options", JSON.stringify(normalizedOptions));
 
     if (isEditMode && onUpdate && product) {
       onUpdate({
@@ -85,10 +152,10 @@ export function AddProductForm({ onSubmit, onUpdate, notify, t, open: controlled
           th: String(fd.get("description") ?? product.description?.th ?? "").trim(),
           en: String(fd.get("descriptionEn") ?? product.description?.en ?? "").trim() || undefined,
         },
-        category: String(fd.get("category") ?? product.category ?? "").trim() || undefined,
+        category,
         imageUrl: imagePreviews[0] ?? product.imageUrl,
         imageUrls: imagePreviews.length > 0 ? imagePreviews : undefined,
-        options: [],
+        options: normalizedOptions,
       });
     } else {
       onSubmit(fd);
@@ -96,6 +163,8 @@ export function AddProductForm({ onSubmit, onUpdate, notify, t, open: controlled
 
     formRef.current?.reset();
     setImagePreviews([]);
+    setOptionRows([]);
+    if (!isEditMode) setCategory("bottle");
     handleClose();
   }
 
@@ -225,9 +294,92 @@ export function AddProductForm({ onSubmit, onUpdate, notify, t, open: controlled
               </div>
 
               {/* Category */}
-              <div className="col-span-2">
+              <div className="hidden">
                 <Label className="text-[10px] mb-1.5 block font-bold text-gray-500">หมวดหมู่</Label>
                 <Input name="category" defaultValue={product?.category ?? ""} placeholder="เช่น เครื่องดื่ม, เสื้อผ้า" className="rounded-xl border-gray-200 text-xs h-10" />
+              </div>
+
+              <div className="col-span-2">
+                <Label className="text-[10px] mb-1.5 block font-bold text-gray-500">Flow / หมวดสินค้า</Label>
+                <Select name="categoryFlow" value={category} onValueChange={setCategory}>
+                  <SelectTrigger className="h-10 rounded-xl text-xs font-bold">
+                    <SelectValue placeholder="เลือก flow สินค้า" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {FLOW_CATEGORY_OPTIONS.map((item) => (
+                      <SelectItem key={item.value} value={item.value}>
+                        <span className="flex flex-col">
+                          <span className="text-xs font-black">{item.label}</span>
+                          <span className="text-[10px] font-semibold text-gray-400">{item.hint}</span>
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="col-span-2 rounded-2xl border border-gray-100 bg-gray-50 p-3">
+                <div className="mb-2 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <Gem className="h-4 w-4 text-[#85241F]" />
+                    <div>
+                      <p className="text-xs font-black text-gray-800">ตัวเลือก / Charm</p>
+                      <p className="text-[10px] font-semibold text-gray-400">ใช้กับสินค้า Charm หรือสินค้าที่ต้องเลือกแบบ</p>
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={addOptionRow}
+                    className="h-8 rounded-xl px-2 text-[10px] font-black"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    เพิ่ม
+                  </Button>
+                </div>
+
+                {optionRows.length > 0 ? (
+                  <div className="flex flex-col gap-2">
+                    {optionRows.map((row) => (
+                      <div key={row.id} className="grid grid-cols-[minmax(0,1fr)_72px_32px] gap-2 rounded-xl bg-white p-2">
+                        <div className="grid gap-2">
+                          <Input
+                            value={row.label}
+                            onChange={(e) => updateOptionRow(row.id, { label: e.target.value })}
+                            placeholder="ชื่อ Charm / ตัวเลือก"
+                            className="h-9 rounded-lg text-xs"
+                          />
+                          <Input
+                            value={row.imageUrl}
+                            onChange={(e) => updateOptionRow(row.id, { imageUrl: e.target.value })}
+                            placeholder="URL รูปตัวเลือก (ถ้ามี)"
+                            className="h-9 rounded-lg text-xs"
+                          />
+                        </div>
+                        <Input
+                          value={row.stock}
+                          onChange={(e) => updateOptionRow(row.id, { stock: e.target.value })}
+                          type="number"
+                          min="0"
+                          placeholder="สต็อก"
+                          className="h-9 rounded-lg text-xs"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeOptionRow(row.id)}
+                          className="flex h-9 w-8 items-center justify-center rounded-lg text-red-500 hover:bg-red-50"
+                          aria-label="ลบตัวเลือก"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="rounded-xl border border-dashed border-gray-200 bg-white px-3 py-3 text-center text-[11px] font-semibold text-gray-400">
+                    ยังไม่มีตัวเลือก ถ้าเป็น Charm ให้เพิ่มรายการ charm ที่ลูกค้าต้องเลือก
+                  </p>
+                )}
               </div>
 
               {/* Description */}

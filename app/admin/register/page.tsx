@@ -15,9 +15,10 @@ export default function AdminRegisterPage() {
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const form = event.currentTarget;
     setLoading(true);
     setMessage("");
-    const formData = new FormData(event.currentTarget);
+    const formData = new FormData(form);
     const data = {
       username: String(formData.get("username") ?? ""),
       password: String(formData.get("password") ?? ""),
@@ -49,7 +50,7 @@ export default function AdminRegisterPage() {
 
     setSuccess(true);
     setMessage("ตั้งรหัสผ่านสำเร็จแล้ว");
-    event.currentTarget.reset();
+    form.reset();
   }
 
   return (

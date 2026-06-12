@@ -18,6 +18,7 @@ export type ProductInput = {
   islandShippingFirstItem?: number;
   islandShippingAdditionalItem?: number;
   discount?: number;
+  category?: string;
   imageUrl?: string;
   imageUrls?: string[];
   options?: unknown[];
