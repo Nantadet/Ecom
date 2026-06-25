@@ -36,7 +36,7 @@ export function CheckoutFooter({
   const { t } = useLanguage();
 
   return (
-    <div className="fixed left-0 md:left-56 lg:left-64 right-0 bottom-0 z-50 border-t border-gray-100 bg-white">
+    <div className="fixed left-0 md:left-56 lg:left-64 right-0 bottom-0 z-50 border-t border-gray-100 bg-white" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
       {/* Shipping rates popover */}
       {showRates && (
         <>
